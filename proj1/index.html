@@ -1,7 +1,226 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 1 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
+<h1 align="middle">Project 1: Rasterizer</h1>
+<h2 align="middle">Linyue Song, Sean Murphy, CS184-goldbears</h2>
+
+<br><br>
+
+    <div>
+
+        <h2 align="middle">Overview</h2>
+        <p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the project.</p>
+
+        <h2 align="middle">Section I: Rasterization</h2>
+
+        <h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
+        <p>
+            <b>Implementation and Algorithm: </b>We first obtain constants dX<sub>i</sub> based on 3 vertices' coordinates. They will be used to construct three L(x,y) test functions later.
+            We then obtain the bounding box of the triangle by finding the min/max values of the x values and y values. For each sample in the bounding box, we first check if the sample is on
+            screen, then perform the point-in-triangle test for the center of the sample. If the sample passes all the checks, we fill the pixel.
+        </p>
+        <p>
+            <b>Key Observation: </b>The order that the vertices of the triangle are given to us can be either clockwise or counter-clockwise. Regardless, if the results of three L(x,y) are all
+            non-negative or all non-positve, the point is either on a triangle edge or in the triangle.
+        </p>
+        <p><b>"Edge Case" Handling: </b>All samples lying on at least an edge are drawn.</p>
+        <p><b>Efficiency: </b>We find the bounding box of the triangle first and perform the check for each sample with in bounding box. Therefore, it satisfies the requirement.</p>
+        <p><b>test4.svg Screenshot:</b></p>
+        <img src="images/task1.png" style="width:500px;" />
+
+        <h3 align="middle">Part 2: Antialiasing triangles</h3>
+        <p>
+            <b>Implementation and Algorithm: </b>We set the sample buffer to be a 1-D vector of dimension width * height * sample_rate, and it stores the color values of each samples.
+            In the <b>rasterize_triangle</b> function, instead of performing the point-in-triangle test just once at the center of each pixel, we do it at every sample locations within each pixel,
+            and store the results directly in the sample buffer. Notice we no longer use the <b>fill_pixel</b> function here. In the <b>resolve_to_framebuffer</b> function, we take the average of all the samples within each pixel and store the results in <b>rgb_framebuffer_target</b>.
+            For the <b>fill_pixel</b> function, we fill every sample in the pixel with the same color, so that lines and dots can be rendered properly.
+        </p>
+        <p>Supersampling is useful because it's equivalent of applying a 1-pixel box filter to the image, which reduces higher signal frequencies. Specifically, supersampling will give us intermediate pixel values, so the edge/corner of the triangles will look smoother. The modifications we made and how we used supersampling are explained in the paragraph above.</p>
+
+        <div align="middle">
+            <table style="width:100%">
+                <tr>
+                    <td>
+                        <img src="images/task2_1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Sample Rate = 1</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/task2_2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Sample Rate = 4</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/task2_3.png" align="middle" width="400px" />
+                        <figcaption align="middle">Sample Rate = 16</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            We observe that the edges become more blurry as the smaple rate increases. That's because with higher sample rate, we take more granular samples.
+            There will be more mixed "point-in-triangle" test results within each pixel, which gives us more intermediate pixel values when taking the average.
+        </p>
+
+        <h3 align="middle">Part 3: Transforms</h3>
+        <p>We rotate both arms of the cubeman by 90 degrees clockwise. We also translate the right arm of cubeman a bit to match the height of the shoulder. Now the cubeman is waving.</p>
+        <img src="images/task3.png" style="width:400px;" />
+
+        <h2 align="middle">Section II: Sampling</h2>
+
+        <h3 align="middle">Part 4: Barycentric coordinates</h3>
+        <p>
+            Barycentric coordinates gives a relative location of a point with respect to three vertices of the triangle. In other words, it tries to express the point of interest as a
+            linear combination of three vertices. We can use Barycentric coordinates to interpolate values in the triangle. For example, in the image (below left), three vertices are colored red, green, and blue
+            respectively. We label these three vertices as r, g, b based on their color. If we just look at the r-b edge of the triangle, as we move from r to b, the color of the points are turning less
+            red and more blue gradually. This is because the weight of r is decreasing while the weight of b is increasing.
+        </p>
+        <table style="width:100%">
+            <tr>
+                <td>
+                    <img src="images/task4_1.png" align="middle" width="400px" />
+                    <figcaption align="middle">Colored Triangle</figcaption>
+                </td>
+                <td>
+                    <img src="images/task4_2.png" align="middle" width="400px" />
+                    <figcaption align="middle">test7.svg</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+        <p>
+            Pixel sampling is the process of setting values at a given location by sampling pixels nearby. In this project we used two different methods of pixel sampling: nearest sampling and
+            bilinear sampling. Nearest sampling picks out a value by sampling the nearest pixel to the point and using that value. On the other hand, bilinear sampling works by sampling the four
+            nearest pixels and linearly interpolating the values at each pixel to get a value at the given coordinates. We used these pixel sampling techniques to obtain the color values
+            at a given point in the image by sampling the coordinates in the texture grid. We have the following four images to compare sampling rate and method:
+        </p>
+        <div align="middle">
+            <table style="width:100%">
+                <tr>
+                    <td>
+                        <img src="images/task5_1.png" align="left" width="400px" />
+                        <figcaption align="middle">Nearest sampling at sample rate = 1</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/task5_2.png" align="right" width="400px" />
+                        <figcaption align="middle">Bilinear samping at sample rate = 1</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/task5_3.png" align="left" width="400px" />
+                        <figcaption align="middle">Nearest sampling at sample rate = 16</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/task5_4.png" align="right" width="400px" />
+                        <figcaption align="middle">Bilinear sampling at sample rate = 16</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            We see that bilinear sampling is much more effective at a lower sample rate. Meanwhile, both methods produce better results at a higher sample rate, with bilinear
+            sampling perhaps taking the edge. Nearest sampling just pick the pixel closest to the point of interest, so it looks more "pixelated". Bilinear sampling interpolates
+            across four nearest neighbors, so it looks much smoother. Therefore they will have a large difference at lower sampling rate. However, when the sampling rate is relatively
+            high, there is much less distance between each pair of samples, so the texture difference among nearest neighbors are smaller and nearest sampling wouldn't look as pixelated
+            as before.
+        </p>
+
+
+        <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+        <p>
+            Level sampling with mipmaps is the process of using different precision levels based on the magnitude of the Jacobian when traversing from (x, y) to (u, v) coordinates.
+            For large changes in the position we sample from higher resolution and for small changes we use lower resolution. This helps reduce Moire patterns in the resulting image.
+            The cost of this is more memory usage and reading time. Moreover, if we use trilinear filtering between levels then we double the reading time. Below are four images with different combinations
+            of nearest pixel sampling, bilinear pixel interpolation, level zero sampling and nearest level sampling.
+        </p>
+        <div align="middle">
+            <table width="100%" align="middle" style="border-spacing: 0">
+                <tr>
+                    <td>
+                        <img src="images/task6_1.png" align="middle" width="400px" />
+                        <figcaption align="middle"><code>L_ZERO, P_NEAREST</code></figcaption>
+                        <br />
+                    </td>
+                    <td>
+                        <img src="images/task6_2.png" align="middle" width="400px" />
+                        <figcaption align="middle"><code>L_ZERO, P_LINEAR</code></figcaption>
+                        <br />
+                    </td>
+                </tr>
+                <br/>
+                <tr>
+                    <td>
+                        <img src="images/task6_3.png" align="middle" width="400px" />
+                        <figcaption align="middle"><code>L_NEAREST, P_NEAREST</code></figcaption>
+                        <br />
+                    </td>
+                    <td>
+                        <img src="images/task6_4.png" align="middle" width="400px" />
+                        <figcaption align="middle"><code>L_NEAREST, P_LINEAR</code></figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+
+        <h2 align="middle">Section III: Art Competition</h2>
+        <p>If you are not participating in the optional art competition, don't worry about this section!</p>
+
+        <h3 align="middle">Part 7: Draw something interesting!</h3>
+        <p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
+
+        <div align="middle">
+            <table style="width:100%">
+                <tr>
+                    <td>
+                        <img src="images/image1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Caption goes here.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/image2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Caption goes here.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/image3.png" align="middle" width="400px" />
+                        <figcaption align="middle">Caption goes here.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/image4.png" align="middle" width="400px" />
+                        <figcaption align="middle">Caption goes here.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div></body>
 </html>
