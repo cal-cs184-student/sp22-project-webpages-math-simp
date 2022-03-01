@@ -1,7 +1,310 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <style>
+    body {
+      padding: 100px;
+      width: 1000px;
+      margin: auto;
+      text-align: left;
+      font-weight: 300;
+      font-family: 'Open Sans', sans-serif;
+      color: #121212;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+  </style>
+  <title>CS 184 Mesh Editor</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2020</h1>
+  <h1 align="middle">Project 2: Mesh Editor</h1>
+  <h2 align="middle">Linyue Song, Sean Murphy</h2>
+
+  <br><br>
+
+  <div>
+
+    <h2 align="middle">Overview</h2>
+    <p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole.
+      Share your thoughts on what interesting things you've learned from completing the project.</p>
+
+    <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+    <h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+    <p><b>de Casteljau's algorithm: </b> Given a set of control points and a constant ratio t, we divide the lines connecting each pair adjacent points into two line segments of ratio t : 1 - t. 
+      We then set these dividing points to be the new set of points and recursively applying the same processure, until we have only 1 point left. This point is the point that's on the final
+    Bezier curve. </p>
+    <p><b>Implementation: </b> For each pair of adjacent points in the given point vector, I calculated the location of the new point by using the lerp formula. Then I push the new point's coordinates
+    in to the return vector. </p>
+
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task1_0.png" align="middle" width="300px" />
+            <figcaption align="middle">Control Points</figcaption>
+          </td>
+          <td>
+            <img src="images/task1_1.png" align="middle" width="300px" />
+            <figcaption align="middle">Step1</figcaption>
+          </td>
+          <td>
+            <img src="images/task1_2.png" align="middle" width="300px" />
+            <figcaption align="middle">Step2</figcaption>
+          </td>
+        </tr>
+        <br>
+        <tr>
+          <td>
+            <img src="images/task1_3.png" align="middle" width="300px" />
+            <figcaption align="middle">Step3</figcaption>
+          </td>
+          <td>
+            <img src="images/task1_4.png" align="middle" width="300px" />
+            <figcaption align="middle">Step4</figcaption>
+          </td>
+          <td>
+            <img src="images/task1_5.png" align="middle" width="300px" />
+            <figcaption align="middle">Step5</figcaption>
+          </td>
+        </tr>
+        <br>
+        <tr>
+          <td>
+            <img src="images/task1_6.png" align="middle" width="300px" />
+            <figcaption align="middle">Final Curve</figcaption>
+          </td>
+          <td>
+            <img src="images/task1_7.png" align="middle" width="300px" />
+            <figcaption align="middle">Slight Modification</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+    <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+    <p><b>De Casteljau algorithm For Bezier Surfaces: </b>For each row of the control points, we perform the de Castelijau algorithm using the same ratio t and find a single point
+      that lies on the Bezier curve. Then we use the points we just found and perform de Castelijau algorithm once again to find the final points lies on the Bezier surface.</p>
+
+    <p><b>Our Implementation: </b>We first called evaluate1D on each row of the control points using u as the ratio. We then applied evaluate1D on the resulting points from the last step
+    and used v as the ratio to get the final point on the Bezier surface. For evaluate1D, we just repeatly called evaluateStep on the given points until there is just a single point returned.</p>
+    <div style="text-align:center">
+    <img src="./images/task2.png" align="middle" width="400px" />
+    </div>
+
+    <h2 align="middle">Section II: Sampling</h2>
+
+    <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+    <p><b>Our Implementation: </b> We iterate through the faces of the vertex. For each face, we first check if the face is a boundary face. If not, we iterate through the 3 vertices of the 
+    face and calculate the sum of cross products of each pair of vertices. Divide this sum vector by 2 gives us the normal vector of the face weighted by area. We summ up the norm of the vectors of 
+    all non boundary faces and return a normalized unit vector.  </p>
+
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task3_1.png" align="middle" width="400px" />
+            <figcaption align="middle">Without Vertex Normals</figcaption>
+          </td>
+          <td>
+            <img src="images/task3_2.png" align="middle" width="400px" />
+            <figcaption align="middle">With Vertex Normals</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <h3 align="middle">Part 4: Half-edge flip</h3>
+    <p><b>Our Implementation: </b>We followed this <a href="http://15462.courses.cs.cmu.edu/fall2015content/misc/HalfedgeEdgeOpImplementationGuide.pdf">guide.</a> Specifically, we divided the 
+    function into two phases. During the first phase, we listed out all references to all related elements. During the second phase, we reassign pointers for all the mesh elements that are
+    affected by the edge operation. There were a lot of unnecessary code, but we did it anyway to be safe. We didn't encounter any bugs. </p>
+
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task4_1.png" align="middle" width="400px" />
+            <figcaption align="middle">Original</figcaption>
+          </td>
+          <td>
+            <img src="images/task4_2.png" align="middle" width="400px" />
+            <figcaption align="middle">Flipped</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p> No bug was encounter in this part.</p>
+
+    <h3 align="middle">Part 5: Half-edge split</h3>
+    <p><b>Our Implementation: </b>Again, we followed this <a href="http://15462.courses.cs.cmu.edu/fall2015content/misc/HalfedgeEdgeOpImplementationGuide.pdf">guide.</a> We drew a diagram of 
+      look of the mesh after the split operation first. Then, we divided the function into three phases. During the first phase, we listed out all references to all related elements. 
+      During the second phase, we declared addition mesh elements that we need. During the last phrase, we reassign pointers for all the mesh elements that are affected by the edge operation. 
+      There were a lot of unnecessary code, but we did it anyway to be safe. We didn't encounter any bugs. Below is the diagram that we drew.</p>
+    
+      <div style="text-align:center">
+        <img src="./images/task5_1.jpg" align="middle" width="400px" />
+        </div>
+
+    
+        <div align="middle">
+          <table style="width=100%">
+            <tr>
+              <td>
+                <img src="images/task5_2.png" align="middle" width="400px" />
+                <figcaption align="middle">Before Split</figcaption>
+              </td>
+              <td>
+                <img src="images/task5_3.png" align="middle" width="400px" />
+                <figcaption align="middle">After Split</figcaption>
+              </td>
+            </tr>
+            <br>
+            <tr>
+              <td>
+                <img src="images/task5_4.png" align="middle" width="400px" />
+                <figcaption align="middle">Before Split and Flip</figcaption>
+              </td>
+              <td>
+                <img src="images/task5_5.png" align="middle" width="400px" />
+                <figcaption align="middle">After Split and Flip</figcaption>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <p> No bug was encounter in this part.</p>
+    <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+    <p><b>Our Implementation: </b> We pretty much followed the comments in student_code.cpp section by section. 
+      We first computed new positions for all the old vertices in the input mesh using the Loop subdivision rule, 
+      and stored them in Vertex::newPosition. We also set the isNew to false for each of these vertices to indicate
+    that they are the old vertices. We then iterate through edges of the mesh and computed the updated vertex positions 
+    of the new vertices generated by spliting these edges. Note that here we haven't actually split the edges yet. After
+    that, we modified our splitEdge function so that it would mark the edges generated by the splits as new. Then in our up
+    sample function, we iterated thru edges in the original mesh by pre-saving the edgesEnd iterator and splited those 
+    edges. We also copied the newPositions stored in the edges into the newly generated vertices. Also, we marked the isNew
+    attribute of the new vertices as true. Next, we flipped any new edge that connected an old and new vertex by iterating 
+    thru the edges in the mesh again. Lastly, we iterate thru all vertices and copied the new vertex positions into final 
+    Vertex::position</p>
+    
+    <p>Below are some screenshots of applying upsampling to torus/input.dae. I noticed that after applying upsampling, the 
+      triangles got divided into smaller triangles and the surfaces became smoother. However, the sharpe edges and corners 
+      also got smoothed out at the same time.
+    </p>
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task6_1.png" align="middle" width="300px" />
+            <figcaption align="middle">No Upsampling</figcaption>
+          </td>
+          <td>
+            <img src="images/task6_2.png" align="middle" width="300px" />
+            <figcaption align="middle">Upsampling Once</figcaption>
+          </td>
+          <td>
+            <img src="images/task6_3.png" align="middle" width="300px" />
+            <figcaption align="middle">Upsampling Twice</figcaption>
+          </td>
+        </tr>
+        <br>
+        
+      </table>
+    </div>
+
+    <p> To reduce this effect, we pre-splited the edges lied on the supposely smooth surfaces. Below is a side-by-side comparison of applying 
+      upsampling to the same torus with/without pre-processing.
+    </p>
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task6_2.png" align="middle" width="400px" />
+            <figcaption align="middle">Without Pre-processing</figcaption>
+          </td>
+          <td>
+            <img src="images/task6_4.png" align="middle" width="400px" />
+            <figcaption align="middle">With Pre-processing</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>Below are screenshots of applying upsampling to the cube without pre-processing.</p>
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task6_5.png" align="middle" width="300px" />
+          </td>
+          <td>
+            <img src="images/task6_6.png" align="middle" width="300px" />
+          </td>
+          <td>
+            <img src="images/task6_7.png" align="middle" width="300px" />
+          </td>
+        </tr>
+        <br>
+        <tr>
+          <td>
+            <img src="images/task6_8.png" align="middle" width="300px" />
+          </td>
+          <td>
+            <img src="images/task6_9.png" align="middle" width="300px" />
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>We can see that the cube became slightly asymmetric after repeated subdivisions. I think it's because each face of 
+      the original cube was made of two right triangles. The way that those two triangles were splited made the surface 
+      became asymmetric after upsampling. However, if we make each surface to be consisted of four congruent right triangles, 
+      the surface will still be symmetrical even after applying upsampling. To do this, we can simply split the edges on 6 faces 
+      of the cube. Below are screenshots of applying upsampling to the cube with pre-processing. We can see that cube is still 
+      symmetric after applying upsampling.</p>
+    <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="images/task6_10.png" align="middle" width="400px" />
+            <figcaption align="middle">Without Pre-processing</figcaption>
+          </td>
+          <td>
+            <img src="images/task6_11.png" align="middle" width="400px" />
+            <figcaption align="middle">With Pre-processing</figcaption>
+          </td>
+        </tr>
+        <br>
+        <tr>
+          <td>
+            <img src="images/task6_12.png" align="middle" width="400px" />
+            <figcaption align="middle">Without Pre-processing</figcaption>
+          </td>
+          <td>
+            <img src="images/task6_13.png" align="middle" width="400px" />
+            <figcaption align="middle">With Pre-processing</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <h2 align="middle">Section III: Optional Extra Credit</h2>
+    <p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
+  
+
+    <h3 align="middle">Part 7: Design your own mesh!</h3>
+
+</body>
+
 </html>
