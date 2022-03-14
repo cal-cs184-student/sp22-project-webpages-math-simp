@@ -22,12 +22,17 @@
     <h2 align="middle">Overview</h2>
     <p>
         In this project we implemented a path tracing rendering algorithm. Path tracing simulates the behavior of light 
-        which results in accurate global illumination and the rendering of photorealistic images in 3D space. For a given geometric shape in 3D space (here we just use triangles and spheres) and a given camera
-        position, we generate random rays in the camera space and translate them to the world space. Next, we find the intersection 
-        of a ray and the surface to determine the lighting at that point. By using a bounding volume hierarchy we can reduce the number
-        of intersection tests needed. Once we have the intersections at a point, the direct lighting is computed from casting shadow
-        rays at the hit point. The indirect lighting is also computed by generating random rays from the hit point. Together we
-        get incredibly realistic images.
+        which results in realistic rendering of photorealistic images in 3D space. For a given camera position, we cast
+        a number of random rays at each pixel and fill out the sample buffer with ray tracing results. To perform ray tracing,
+        we first implement intersection test functions for a primitives such as triangles and spheres. We also construct
+        a bounding volume hierarchy structure to reduce the number of intersection tests needed. In addition, we implement
+        DiffuseBSDF class for so that reflections can be properly calculated for diffuse materials. Next, we implement the
+        zero-bounce function to account for the lights that directly come from the light source. For the direct illumination,
+        we implement both uniform hemisphere sampling and importance sampling. However, direct illumination alone is not
+        enough to create realistic image, so we implement global illumination to account for lights that bounce multiple
+        times. We also use Russian Roulette to stop infinite recursion. Last, to reduce the number of samples each pixel
+        has to generate, we implement adaptive sampling. It dynamically calculates an I score based on some basic statistics
+        and use that I to determine whether the sampling should stop.
     </p>
 
 
