@@ -1,7 +1,184 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+        div.padded {
+            padding-top: 0px;
+            padding-right: 100px;
+            padding-bottom: 0.25in;
+            padding-left: 100px;
+        }
+    </style>
+    <title>Your Name | CS 184</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen"/>
+</head>
+<body>
+<br/>
+<h1 align="middle">Assignment 3: PathTracer</h1>
+<h2 align="middle">Linyue Song, Sean Murphy</h2>
+
+<div class="padded">
+    <div align="middle">
+        <h2>Overview</h2>
+        <p>
+            In this project, we added additional support for glass, mirror, and microfacet materials.<br>
+            In part 1, we implemented reflect and refract functions and used them to implement the bsdf for glass and
+            mirror
+            materials. In part 2, we built support for microfacet materials by calculating the Fresnel Term, NDF, and
+            Beckmann NDF.
+        </p>
+    </div>
+    <h2 align="middle">Part 1: Mirror and Glass Materials</h2>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part1_m0.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 0
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/part1_m1.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 1
+                    </figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part1_m2.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 2
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/part1_m3.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 3
+                    </figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part1_m4.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 4
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/part1_m5.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 5
+                    </figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part1_m100.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        m = 100
+                    </figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <ul>
+        <li>m = 0: Only the light source can be seen.</li>
+        <li>m = 1: Lights bounces off from the walls and the balls. So now the walls are lit and we can see
+            reflections of the light source on the balls.
+        </li>
+        <li>m = 2: We can see the mirror effects now. The path of the lights would be light source -> object ->
+            mirror surface -> camera, which is exactly 2 bounces. The shadows are also softer since indirect
+            illumination takes effect now.
+        </li>
+        <li>m = 3: We can see the refraction effects now. The path of the lights would be light source -> object ->
+            entering surface of the glass -> exiting surface of the glass -> camera.
+        </li>
+        <li>m = 4: We can see the refraction effects of the right ball in the mirror reflection of the left ball
+            now. The path of the lights would be light source -> object -> entering surface of the right glass ball
+            -> exiting surface of the right glass ball -> mirror surface of the left ball -> camera.
+            We can also see a small lit area on the wall. The light path would be light source -> mirror surface of
+            the left ball -> entering surface of the right ball -> exiting surface of the right ball -> wall ->
+            camera, which is 4 bounces.
+        </li>
+        <li> m = 5: There is a tiny bright dot appeared in the mirror reflection(on the left ball) of the right ball
+            near the center of the reflected image of the right ball. The light path would be light source -> mirror
+            surface of the left ball -> entering surface of the right ball -> internal reflection inside the right ball
+            -> exiting surface of the right ball -> mirror surface of the left ball -> camera.
+        </li>
+        <li> m = 100: Not much change.</li>
+    </ul>
+
+    <h2 align="middle">Part 2: Microfacet Material</h2>
+    <div align="middle">
+        <h3>Dragon</h3>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part2_0005.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        alpha = 0.005
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_005.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        alpha = 0.05
+                    </figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part2_025.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        alpha = 0.25
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_05.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        alpha = 0.5
+                    </figcaption>
+                </td>
+            </tr>
+        </table>
+        <p> As alpha increases, the dragon becomes less glossy and more matte.</p>
+    </div>
+
+    <div align="middle">
+        <h3>Bunny</h3>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part2_importance.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        Importance Sampling
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_cos.png" align="middle" width="400px"/>
+                    <figcaption align="middle">
+                        Cosine Hemisphere Sampling
+                    </figcaption>
+                </td>
+            </tr>
+        </table>
+        <p> Importance Sampling produces much less noise.</p>
+    </div>
+    <div align="middle">
+        <h3>Silver Material</h3>
+        We looked up the eta and k values of silver. <br>
+        eta = 0.059193, 0.059881, 0.047366 <br>
+        k = 4.1283, 3.5892, 2.8132.<br>
+        <img src="images/part2_silver.png" width="500px"/>
+    </div>
+
+</div>
+</body>
 </html>
+
+
+
+
