@@ -1,7 +1,344 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+        body {
+            padding: 100px;
+            width: 1000px;
+            margin: auto;
+            text-align: left;
+            font-weight: 300;
+            font-family: 'Open Sans', sans-serif;
+            color: #121212;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+    </style>
+    <title>CS 184 Mesh Editor</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Linyue Song, Sean Murphy, CS184-emperor-s-clothes</h2>
+
+<br><br>
+
+<div>
+
+    <h2 align="middle">Overview</h2>
+    <p>In this project, we build a simple cloth simulation and a few shading effects. We first modeled the physical
+        behavior of a cloth using a grid of point masses and springs. We then used numeric integration to approximate
+        the movement of each point masses. To calculate the total force that acts on each point masses, we considered
+        three sources: environment force (such as gravity), collision with other objects in the scene, collision with
+        the cloth itself. After this, we shifted our gear to implement shaders which renders the lighting and shading
+        effects for various materials. Specifically, we implemented the Blinn-Phong shading, texture mapping, bump
+        mapping, displacement mapping, and environment mirror reflections.
+    </p>
+
+    <h2 align="middle">Part I: Masses and springs</h2>
+
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part1_no_shearing.png" align="middle" width="320px"/>
+                    <figcaption align="middle">No Shearing</figcaption>
+                </td>
+                <td>
+                    <img src="images/part1_just_shearing.png" align="middle" width="320px"/>
+                    <figcaption align="middle">Shearing Only</figcaption>
+                </td>
+                <td>
+                    <img src="images/part1_all.png" align="middle" width="320px"/>
+                    <figcaption align="middle">With All Constraints</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h2 align="middle">Part II: Simulation via numerical integration</h2>
+    <div align="middle">
+        <h4>Varying KS</h4>
+        <p> As ks increases, the center of the top edge of the cloth rests at a higher position. There are also fewer wrinkles.
+            This is because the amount of forces required to stretch/compress a spring by the same length increases when
+            ks increases. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part2_ks500.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks = 55000</figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_default.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks = 5000</figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_ks55000.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks = 55000</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h4>Varying Density</h4>
+        <p> As density increases, the center of the top edge of the cloth rests at a higher position.
+            This is because the cloth gets lighter when density is lower, so there is less gravitational force to pull
+            the springs downward. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part2_density1.png" align="middle" width="320px"/>
+                    <figcaption align="middle">density = 1</figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_default.png" align="middle" width="320px"/>
+                    <figcaption align="middle">density = 15</figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_density900.png" align="middle" width="320px"/>
+                    <figcaption align="middle">density = 900</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h4>Varying Damping</h4>
+        <p> When damping is small, the cloth falls quickly. It also swings back and forth because no much energy is
+            dissipated. When damping is large, the cloth falls slowly. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part2_damping0.png" align="middle" width="320px"/>
+                    <figcaption align="middle">damping = 0, step = 50</figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_damping02.png" align="middle" width="320px"/>
+                    <figcaption align="middle">damping = 0.2, step = 50</figcaption>
+                </td>
+                <td>
+                    <img src="images/part2_damping099.png" align="middle" width="320px"/>
+                    <figcaption align="middle">damping = 0.99, step = 50</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h4>scene/pinned4.json</h4>
+        <img src="images/part2.png", width="900px">
+    </div>
+
+    <h2 align="middle">Part III: Handling collisions with other objects</h2>
+
+    <div align="middle">
+        <h4>Sphere</h4>
+        <p>As we can see from screenshots below, the smaller ks is, the softer the cloth is, and the more wrinkles there
+        will be. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part3_k500.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks = 500</figcaption>
+                </td>
+                <td>
+                    <img src="images/part3_k5000.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks = 5000</figcaption>
+                </td>
+                <td>
+                    <img src="images/part3_k50000.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks = 50000</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h4>Plane</h4>
+        <img src="images/part3_plane.png", width="900px">
+    </div>
+
+    <h2 align="middle">Part IV: Handling self-collisions.</h2>
+
+    <div align="middle">
+        <h4>Default Parameter</h4>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part4_early.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Early</figcaption>
+                </td>
+                <td>
+                    <img src="images/part4_middle.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Middle</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part4_rest.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Near Rest</figcaption>
+                </td>
+                <td>
+                    <img src="images/part4_end.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Rest</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h4>Varying density</h4>
+        <p>As we can see from screenshots below, smaller density has fewer folds, and larger density has more folds.
+            This is because smaller density means a lighter cloth, which intuitively should have fewer folds. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part4_density1.png" align="middle" width="320px"/>
+                    <figcaption align="middle">density = 1</figcaption>
+                </td>
+                <td>
+                    <img src="images/part4_rest.png" align="middle" width="320px"/>
+                    <figcaption align="middle">density = 150</figcaption>
+                </td>
+                <td>
+                    <img src="images/part4_density550.png" align="middle" width="320px"/>
+                    <figcaption align="middle">density = 550</figcaption>
+                </td>
+            </tr>
+        </table>
+
+        <h4>Varying ks</h4>
+        <p>As we can see from screenshots below, smaller ks has more folds, since smaller ks means softer springs,
+        which makes it a softer cloth.</p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part4_k5.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks=5</figcaption>
+                </td>
+                <td>
+                    <img src="images/part4_rest.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks=5000</figcaption>
+                </td>
+                <td>
+                    <img src="images/part4_k50000.png" align="middle" width="320px"/>
+                    <figcaption align="middle">ks=50000</figcaption>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+    <h2 align="middle">Part V: Shaders.</h2>
+    <h4 align="middle">task1</h4>
+    <p> Shaders are independent programs that run in parallel and render the light and material. In particular, the
+        .vert programs apply transformation to the vertices, and feed their output (such as vertex position and normal)
+        to .frag programs. It also writes the final positions of the vertices to <code>gl_Position</code> so that the
+        GPU can display them on screen. The .frag program then uses the inputs passed by .vert programs and renders an
+        output color for the fragment.
+    <h4 align="middle">task2</h4>
+    <div align="middle">
+        <p>Blinn-Phong shading model is a model that combines the effects of ambient lighting, diffuse reflection, and
+        specular reflection to mimic the shading of real materials. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part5_ambient.png" align="middle" width="450px"/>
+                    <figcaption align="middle">ambient only</figcaption>
+                </td>
+                <td>
+                    <img src="images/part5_diffuse.png" align="middle" width="450px"/>
+                    <figcaption align="middle">diffuse only</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part5_specular.png" align="middle" width="450px"/>
+                    <figcaption align="middle">specular only</figcaption>
+                </td>
+                <td>
+                    <img src="images/part5_all.png" align="middle" width="450px"/>
+                    <figcaption align="middle">entire Blinn-Phong model</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h4 align="middle">task3</h4>
+    <div align="middle">
+    <img src="images/part5_task3.png", width="900px">
+    </div>
+
+    <div align="middle">
+        <h4 align="middle">task4</h4>
+        <p> As we can see from screenshots below, bump mapping gives us a visual illusion of uneven surface. However, if
+            you take a close look, the surface is still smooth. Other the hand, in addition to creating an uneven shading
+            effect, displacement mapping actually moves the vertices so the surface is no longer smooth. </p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part5_bump_cloth.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Bump Cloth</figcaption>
+                </td>
+                <td>
+                    <img src="images/part5_bump_sphere.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Bump Sphere</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part5_dis_cloth.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Displacement Cloth</figcaption>
+                </td>
+                <td>
+                    <img src="images/part5_dis_sphere.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Displacement Sphere</figcaption>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <br>
+        <p> As we can see from screenshots below, visual appealingness of displacement mapping is more susceptible to
+            mesh's coarseness change.</p>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/part5_bump_o16.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Bump o=16, a=16</figcaption>
+                </td>
+                <td>
+                    <img src="images/part5_dis_o16.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Displacement o=16, a=16</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="images/part5_bump_o128.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Bump o=128, a=128</figcaption>
+                </td>
+                <td>
+                    <img src="images/part5_dis_o128.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Displacement o=128, a=128</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div align="middle">
+        <h4 align="middle">task5</h4>
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/mirror_cloth.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Mirror Cloth</figcaption>
+                </td>
+                <td>
+                    <img src="images/mirror_sphere.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Mirror Sphere</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+
+
+</body>
 </html>
